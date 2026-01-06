@@ -56,7 +56,42 @@ namespace WebAuth.Controllers
         // GET: Account/Logout
         public ActionResult Logout()
         {
-            AuthenticationManager.SignOut("ApplicationCookie");
+            // Check if user authenticated via Auth0
+            var authProvider = Session["user:provider"]?.ToString();
+
+            // Clear session
+            Session.Clear();
+            Session.Abandon();
+
+            // Sign out from cookie
+            AuthenticationManager.SignOut(Microsoft.Owin.Security.Cookies.CookieAuthenticationDefaults.AuthenticationType);
+
+            // If Auth0 user, also sign out from Auth0
+            if (authProvider == "auth0")
+            {
+                AuthenticationManager.SignOut("Auth0");
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        // Login with Auth0
+        public ActionResult LoginAuth0(string returnUrl)
+        {
+            // Redirect to Auth0 login
+            HttpContext.GetOwinContext().Authentication.Challenge(
+                new AuthenticationProperties
+                {
+                    RedirectUri = returnUrl ?? Url.Action("Index", "Home")
+                },
+                "Auth0"
+            );
+            return new HttpUnauthorizedResult();
+        }
+
+        // Auth0 callback handler
+        public ActionResult Auth0Callback()
+        {
             return RedirectToAction("Index", "Home");
         }
 
@@ -73,11 +108,15 @@ namespace WebAuth.Controllers
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, username),
-                new Claim(ClaimTypes.Name, username)
+                new Claim(ClaimTypes.Name, username),
+                new Claim("auth_provider", "local")
             };
 
-            var identity = new ClaimsIdentity(claims, "ApplicationCookie");
-            var principal = new ClaimsPrincipal(identity);
+            var identity = new ClaimsIdentity(claims, Microsoft.Owin.Security.Cookies.CookieAuthenticationDefaults.AuthenticationType);
+
+            // Store in session for local users too
+            Session["user:name"] = username;
+            Session["user:provider"] = "local";
 
             AuthenticationManager.SignIn(
                 new AuthenticationProperties

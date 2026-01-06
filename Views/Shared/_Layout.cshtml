@@ -23,9 +23,16 @@
                 <ul class="navbar-nav ms-auto">
                     @if (Request.IsAuthenticated)
                     {
+                        var provider = Session["user:provider"]?.ToString();
+                        var displayName = Session["user:name"]?.ToString() ?? User.Identity.Name;
+
                         <li class="nav-item">
                             <span class="navbar-text text-white me-3">
-                                Welcome, <strong>@User.Identity.Name</strong>
+                                Welcome, <strong>@displayName</strong>
+                                @if (provider == "auth0")
+                                {
+                                    <span class="badge bg-secondary ms-1">Auth0</span>
+                                }
                             </span>
                         </li>
                         <li class="nav-item">
