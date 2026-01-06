@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Owin;
+using Microsoft.Owin.Security.Cookies;
 using Owin;
 
 [assembly: OwinStartup(typeof(WebAuth.Startup))]
@@ -16,8 +17,18 @@ namespace WebAuth
 
         private void ConfigureAuth(IAppBuilder app)
         {
-            // Configure authentication middleware here
-            // Example: app.UseCookieAuthentication(new CookieAuthenticationOptions());
+            // Enable the application to use a cookie to store information about the logged in user
+            app.UseCookieAuthentication(new CookieAuthenticationOptions
+            {
+                AuthenticationType = "ApplicationCookie",
+                LoginPath = new PathString("/Account/Login"),
+                LogoutPath = new PathString("/Account/Logout"),
+                ExpireTimeSpan = TimeSpan.FromMinutes(30),
+                SlidingExpiration = true,
+                CookieName = "WebAuthCookie",
+                CookieHttpOnly = true,
+                CookieSecure = CookieSecureOption.SameAsRequest
+            });
         }
     }
 }
